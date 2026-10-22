@@ -7,6 +7,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(GalleryPlugin.class);
+        registerPlugin(NativeCamPlugin.class);
+        registerPlugin(GnssPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
