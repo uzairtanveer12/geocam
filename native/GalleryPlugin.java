@@ -2,6 +2,7 @@ package com.geocam.app;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -11,10 +12,16 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 @CapacitorPlugin(name = "Gallery")
 public class GalleryPlugin extends Plugin {
+
+    private byte[] decode(String data) {
+        int i = data.indexOf(",");
+        return Base64.decode(i >= 0 ? data.substring(i + 1) : data, Base64.DEFAULT);
+    }
 
     @PluginMethod
     public void save(PluginCall call) {
@@ -26,8 +33,7 @@ public class GalleryPlugin extends Plugin {
         }
         byte[] bytes;
         try {
-            int i = data.indexOf(",");
-            bytes = Base64.decode(i >= 0 ? data.substring(i + 1) : data, Base64.DEFAULT);
+            bytes = decode(data);
         } catch (Throwable e) {
             call.reject("Decode failed: " + e);
             return;
@@ -50,6 +56,75 @@ public class GalleryPlugin extends Plugin {
             }
         }
         call.reject(err.toString());
+    }
+
+    @PluginMethod
+    public void share(final PluginCall call) {
+        final String data = call.getString("data");
+        final String name = call.getString("name", "GeoCam_" + System.currentTimeMillis() + ".jpg");
+        final String text = call.getString("text", "");
+        final String old = call.getString("uri", "");
+        try {
+            Uri uri = null;
+            ContentResolver cr = getContext().getContentResolver();
+            if (old != null && !old.isEmpty()) {
+                try {
+                    uri = Uri.parse(old);
+                    InputStream is = cr.openInputStream(uri);
+                    if (is == null) {
+                        uri = null;
+                    } else {
+                        is.close();
+                    }
+                } catch (Throwable e) {
+                    uri = null;
+                }
+            }
+            if (uri == null) {
+                if (data == null) {
+                    call.reject("No image data");
+                    return;
+                }
+                uri = write(decode(data), name, Environment.DIRECTORY_PICTURES + "/GeoCam");
+            }
+            final Uri shareUri = uri;
+            getActivity().runOnUiThread(() -> {
+                try {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("image/jpeg");
+                    send.putExtra(Intent.EXTRA_STREAM, shareUri);
+                    if (text != null && !text.isEmpty()) {
+                        send.putExtra(Intent.EXTRA_TEXT, text);
+                    }
+                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    getActivity().startActivity(Intent.createChooser(send, "Share photo"));
+                    JSObject ret = new JSObject();
+                    ret.put("uri", shareUri.toString());
+                    call.resolve(ret);
+                } catch (Throwable e) {
+                    call.reject("Share failed: " + e);
+                }
+            });
+        } catch (Throwable e) {
+            call.reject("Share failed: " + e);
+        }
+    }
+
+    @PluginMethod
+    public void openUrl(final PluginCall call) {
+        final String url = call.getString("url");
+        if (url == null) {
+            call.reject("No url");
+            return;
+        }
+        getActivity().runOnUiThread(() -> {
+            try {
+                getActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                call.resolve();
+            } catch (Throwable e) {
+                call.reject("Open failed: " + e);
+            }
+        });
     }
 
     private Uri write(byte[] bytes, String name, String folder) throws Exception {

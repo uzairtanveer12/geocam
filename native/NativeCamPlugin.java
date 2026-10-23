@@ -3,13 +3,18 @@ package com.geocam.app;
 import android.Manifest;
 import android.graphics.Color;
 import android.graphics.Outline;
+import android.util.Range;
 import android.util.Size;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import androidx.annotation.NonNull;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExposureState;
+import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
@@ -31,6 +36,7 @@ import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 @CapacitorPlugin(
     name = "NativeCam",
@@ -137,6 +143,12 @@ public class NativeCamPlugin extends Plugin {
                         ret.put("min", zs != null ? zs.getMinZoomRatio() : 1.0);
                         ret.put("max", zs != null ? zs.getMaxZoomRatio() : 1.0);
                         ret.put("zoom", zs != null ? zs.getZoomRatio() : 1.0);
+                        ret.put("hasFlash", camera.getCameraInfo().hasFlashUnit());
+                        ExposureState es = camera.getCameraInfo().getExposureState();
+                        Range<Integer> rg = es.getExposureCompensationRange();
+                        ret.put("expMin", rg.getLower().intValue());
+                        ret.put("expMax", rg.getUpper().intValue());
+                        ret.put("expStep", es.getExposureCompensationStep().doubleValue());
                         call.resolve(ret);
                     } catch (Throwable e) {
                         call.reject("Camera start failed: " + e);
@@ -171,27 +183,85 @@ public class NativeCamPlugin extends Plugin {
             call.reject("Camera not started");
             return;
         }
+        final int rot = call.getInt("rotation", 0);
         final File out = new File(getContext().getCacheDir(), "cap_" + System.currentTimeMillis() + ".jpg");
         final ImageCapture.OutputFileOptions opts = new ImageCapture.OutputFileOptions.Builder(out).build();
-        getActivity().runOnUiThread(() ->
-            imageCapture.takePicture(
-                opts,
-                ContextCompat.getMainExecutor(getContext()),
-                new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults results) {
-                        JSObject ret = new JSObject();
-                        ret.put("path", out.getAbsolutePath());
-                        call.resolve(ret);
-                    }
+        getActivity().runOnUiThread(() -> {
+            try {
+                int sr = rot == 90 ? Surface.ROTATION_90 : rot == 180 ? Surface.ROTATION_180 : rot == 270 ? Surface.ROTATION_270 : Surface.ROTATION_0;
+                imageCapture.setTargetRotation(sr);
+                imageCapture.takePicture(
+                    opts,
+                    ContextCompat.getMainExecutor(getContext()),
+                    new ImageCapture.OnImageSavedCallback() {
+                        @Override
+                        public void onImageSaved(@NonNull ImageCapture.OutputFileResults results) {
+                            JSObject ret = new JSObject();
+                            ret.put("path", out.getAbsolutePath());
+                            call.resolve(ret);
+                        }
 
-                    @Override
-                    public void onError(@NonNull ImageCaptureException e) {
-                        call.reject("Capture failed: " + e);
+                        @Override
+                        public void onError(@NonNull ImageCaptureException e) {
+                            call.reject("Capture failed: " + e);
+                        }
                     }
+                );
+            } catch (Throwable e) {
+                call.reject("Capture failed: " + e);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void setFlash(final PluginCall call) {
+        final String mode = call.getString("mode", "off");
+        getActivity().runOnUiThread(() -> {
+            try {
+                if (imageCapture != null) {
+                    int fm = "on".equals(mode) ? ImageCapture.FLASH_MODE_ON : "auto".equals(mode) ? ImageCapture.FLASH_MODE_AUTO : ImageCapture.FLASH_MODE_OFF;
+                    imageCapture.setFlashMode(fm);
                 }
-            )
-        );
+                if (camera != null) {
+                    camera.getCameraControl().enableTorch("torch".equals(mode));
+                }
+            } catch (Throwable ignored) {
+            }
+            call.resolve();
+        });
+    }
+
+    @PluginMethod
+    public void focus(final PluginCall call) {
+        final Double x = call.getDouble("x", 0.0);
+        final Double y = call.getDouble("y", 0.0);
+        getActivity().runOnUiThread(() -> {
+            try {
+                if (camera != null && previewView != null) {
+                    MeteringPoint pt = previewView.getMeteringPointFactory().createPoint(x.floatValue(), y.floatValue());
+                    FocusMeteringAction action = new FocusMeteringAction.Builder(pt, FocusMeteringAction.FLAG_AF | FocusMeteringAction.FLAG_AE)
+                        .setAutoCancelDuration(4, TimeUnit.SECONDS)
+                        .build();
+                    camera.getCameraControl().startFocusAndMetering(action);
+                }
+            } catch (Throwable ignored) {
+            }
+            call.resolve();
+        });
+    }
+
+    @PluginMethod
+    public void setExposure(final PluginCall call) {
+        final int index = call.getInt("index", 0);
+        getActivity().runOnUiThread(() -> {
+            try {
+                if (camera != null) {
+                    camera.getCameraControl().setExposureCompensationIndex(index);
+                }
+            } catch (Throwable ignored) {
+            }
+            call.resolve();
+        });
     }
 
     @PluginMethod
