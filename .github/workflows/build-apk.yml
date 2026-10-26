@@ -9,6 +9,11 @@ on:
   push:
     branches: [main, master]
     tags: ['**']
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - 'docs/**'
+      - 'assets/social-preview.png'
 permissions:
   contents: write
 jobs:
