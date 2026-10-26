@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/33962272/README.md)
 # GeoCam – Open-Source GPS Camera for Android
 
 **GeoCam is a free, open-source geotag camera app for Android.** Every photo is stamped with your live GPS location, full address, coordinates, date and time, and a small map, so you can prove where and when a photo was taken. It also shows how many satellites your phone is using (GPS, GLONASS, Galileo, BeiDou, QZSS, SBAS and NavIC).
