@@ -21,6 +21,7 @@ import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
+import androidx.camera.core.TorchState;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.resolutionselector.AspectRatioStrategy;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
@@ -51,6 +52,7 @@ public class NativeCamPlugin extends Plugin {
     private ProcessCameraProvider provider;
     private ImageCapture imageCapture;
     private Camera camera;
+    private boolean frontNow = false;
 
     private void removePreview() {
         try {
@@ -99,6 +101,7 @@ public class NativeCamPlugin extends Plugin {
         final int h = call.getInt("h", 100);
         final int r = call.getInt("r", 0);
         final boolean front = "front".equals(call.getString("facing", "back"));
+        frontNow = front;
 
         getActivity().runOnUiThread(() -> {
             try {
@@ -311,6 +314,34 @@ public class NativeCamPlugin extends Plugin {
             } catch (Throwable e) {
                 call.reject("Exposure failed: " + e);
             }
+        });
+    }
+
+    @PluginMethod
+    public void status(final PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            JSObject o = new JSObject();
+            try {
+                o.put("started", camera != null);
+                if (camera != null) {
+                    ZoomState zs = camera.getCameraInfo().getZoomState().getValue();
+                    if (zs != null) {
+                        o.put("zoom", zs.getZoomRatio());
+                        o.put("zoomMin", zs.getMinZoomRatio());
+                        o.put("zoomMax", zs.getMaxZoomRatio());
+                    }
+                    o.put("expIndex", camera.getCameraInfo().getExposureState().getExposureCompensationIndex());
+                    Integer ts = camera.getCameraInfo().getTorchState().getValue();
+                    o.put("torch", ts != null && ts == TorchState.ON);
+                    o.put("facing", frontNow ? "front" : "back");
+                    o.put("sensorRotation", camera.getCameraInfo().getSensorRotationDegrees());
+                    o.put("hasFlash", camera.getCameraInfo().hasFlashUnit());
+                }
+                o.put("preview", previewView != null);
+            } catch (Throwable e) {
+                o.put("error", String.valueOf(e));
+            }
+            call.resolve(o);
         });
     }
 

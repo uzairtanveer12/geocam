@@ -61,6 +61,31 @@ input.t::placeholder{color:rgba(255,255,255,.5)}
 .m{position:fixed;inset:0;background:rgba(0,0,0,.93);display:none;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));z-index:6}
 .m.on{display:flex}.m img{flex:1;min-height:0;object-fit:contain;width:100%}
 .mr{display:flex;gap:8px;margin-top:10px}.mr>*{flex:1;padding:12px 4px;margin:0;width:auto}
+.rep{max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:11px/1.45 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px;margin:10px 0;user-select:text;-webkit-user-select:text}
+/* auto scale for different screens */
+body{font-size:calc(15px*var(--s,1))}
+.ic{width:calc(44px*var(--s,1));height:calc(44px*var(--s,1))}
+.ic.big{width:calc(58px*var(--s,1));height:calc(58px*var(--s,1))}
+.ic svg{width:calc(22px*var(--s,1));height:calc(22px*var(--s,1))}
+.ic.big svg{width:calc(24px*var(--s,1));height:calc(24px*var(--s,1))}
+.shut{width:calc(76px*var(--s,1));height:calc(76px*var(--s,1))}
+.bar{height:calc(84px*var(--s,1))}
+.zm{min-height:calc(40px*var(--s,1))}
+.zm button{min-width:calc(48px*var(--s,1));height:calc(40px*var(--s,1));font-size:calc(13px*var(--s,1))}
+.chip{font-size:calc(13px*var(--s,1));padding:calc(8px*var(--s,1)) calc(14px*var(--s,1))}
+.ov{font-size:calc(12.5px*var(--s,1));padding:calc(12px*var(--s,1)) calc(14px*var(--s,1))}
+.ov b{font-size:calc(17px*var(--s,1))}
+.toast{font-size:calc(13px*var(--s,1));top:calc(66px*var(--s,1))}
+.exr{width:calc(46px*var(--s,1));height:var(--exh,260px)}
+.exr input{width:calc(var(--exh,260px) - 44px)}
+.pill{font-size:calc(15px*var(--s,1))}
+.compact .ov{font-size:11px;padding:8px 10px;line-height:1.3}
+.compact .ov b{font-size:14px}
+.compact .zm{min-height:34px}.compact .zm button{height:34px}
+.compact .bar{height:72px}
+.wide .app{max-width:520px;margin:0 auto}
+.wide .sheet{max-width:520px;left:50%;right:auto;width:100%;transform:translate(-50%,105%)}
+.wide .sheet.on{transform:translate(-50%,0)}
 </style></head><body>
 <div class="app">
 <div class="cam">
@@ -90,6 +115,11 @@ input.t::placeholder{color:rgba(255,255,255,.5)}
 <div class="row2"><span>Grid lines</span><button id="tgrid" class="gl seg">Off</button></div>
 <div class="row2"><span>Timer</span><button id="ttim" class="gl seg">Off</button></div>
 <div class="row2"><span>Photo quality</span><button id="tq" class="gl seg">Standard</button></div>
+<h3 style="margin:18px 0 6px">Debug</h3>
+<div class="row2"><span id="errc">Errors stored: 0</span><span style="display:flex;gap:8px"><button id="errcp" class="gl seg">Copy errors</button><button id="errcl" class="gl seg">Clear</button></span></div>
+<button id="runt" class="gl pill">Run all tests</button>
+<pre id="rep" class="rep" hidden></pre>
+<div id="repb" class="row2" hidden><button id="repcp" class="gl seg">Copy report</button><button id="repsv" class="gl seg">Save .txt</button><button id="repsh" class="gl seg">Share</button></div>
 <p class="hint" id="diag" style="margin:12px 0 0"></p>
 <button id="cfgx" class="gl pill">Done</button></div>
 <div class="sheet gl" id="galp"><h3>Gallery (<span id="n">0</span>)</h3><div class="g" id="g"></div><button id="galx" class="gl pill">Done</button></div>
@@ -102,7 +132,12 @@ const $=i=>document.getElementById(i);
 let stream=null,facing="environment",pos=null,items=[],cur=null,last=null,geoP=Promise.resolve(),mapD=null,dirty={ttl:0,adr:0},gw=0;
 try{items=JSON.parse(localStorage.getItem("geocam2")||"[]")}catch(e){}
 function persist(){try{localStorage.setItem("geocam2",JSON.stringify(items))}catch(e){while(items.length>1){items.pop();try{localStorage.setItem("geocam2",JSON.stringify(items));break}catch(_){}}}}
-let mtm=0;const msg=(t,d)=>{const e=$("msg");e.textContent=t;e.hidden=false;clearTimeout(mtm);mtm=setTimeout(()=>e.hidden=true,d||4500)};
+function getErrs(){try{return JSON.parse(localStorage.getItem("geocam_err")||"[]")}catch(e){return[]}}
+function logErr(src,m){try{const a=getErrs();a.push({t:new Date().toISOString(),s:src,m:String(m).slice(0,400)});while(a.length>150)a.shift();localStorage.setItem("geocam_err",JSON.stringify(a))}catch(e){}}
+const ERR_RE=/fail|error|denied|not (available|supported|applied|implemented)|unavailable|could not|cannot|unable|timed out/i;
+window.addEventListener("error",e=>logErr("js",(e.message||"error")+(e.lineno?" (line "+e.lineno+")":"")));
+window.addEventListener("unhandledrejection",e=>logErr("promise",e.reason&&e.reason.message||e.reason));
+let mtm=0;const msg=(t,d)=>{if(ERR_RE.test(String(t)))logErr("app",t);const e=$("msg");e.textContent=t;e.hidden=false;clearTimeout(mtm);mtm=setTimeout(()=>e.hidden=true,d||4500)};
 const fmt=p=>p?p.lat.toFixed(6)+", "+p.lon.toFixed(6)+" (±"+Math.round(p.acc)+" m)":"Location unavailable";
 function dist(a,b){const dx=(a.lon-b.lon)*111320*Math.cos(a.lat*Math.PI/180),dy=(a.lat-b.lat)*110540;return Math.hypot(dx,dy)}
 function loadMap(p){return new Promise(res=>{
@@ -287,7 +322,7 @@ function relayout(){
  const b=document.querySelector(".cam").getBoundingClientRect(),d=window.devicePixelRatio||1;
  NC.layout({x:Math.round(b.left*d),y:Math.round(b.top*d),w:Math.round(b.width*d),h:Math.round(b.height*d)}).catch(()=>{});
 }
-window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(relayout,150)});
+window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>{fit();relayout()},150)});
 const NC=plug("NativeCam");
 let useNative=false,nativeFailed=false;
 function buildChips(){
@@ -360,6 +395,164 @@ $("v").parentElement.addEventListener("click",e=>{
  NC.focus({x:(e.clientX-b.left)*d,y:(e.clientY-b.top)*d}).catch(()=>{});
  if(expMax>expMin){$("exs").value=0;$("exl").textContent="EV 0";applyEx(0);showEx()}
 });
+// ===== auto screen fit =====
+function fit(){
+ const w=window.innerWidth||390,h=window.innerHeight||800;
+ let s=Math.min(w/390,h/820);s=Math.max(.8,Math.min(1.2,s));
+ const st=document.documentElement.style;
+ st.setProperty("--s",s.toFixed(3));
+ st.setProperty("--exh",Math.round(Math.min(260*s,h*.32))+"px");
+ document.body.classList.toggle("compact",h<640);
+ document.body.classList.toggle("wide",w>=600);
+}
+fit();
+// ===== error log + auto tests =====
+const sleepMs=ms=>new Promise(r=>setTimeout(r,ms));
+const tmo=(p,ms,label)=>Promise.race([Promise.resolve(p),new Promise((_,rej)=>setTimeout(()=>rej(new Error((label||"operation")+" timed out after "+ms+" ms")),ms))]);
+const eMsg=e=>String((e&&(e.message||e.errorMessage))||e);
+function errText(n){const a=getErrs().slice(-(n||200));return a.length?a.map(x=>"["+x.t.replace("T"," ").slice(0,19)+"Z] "+x.s+": "+x.m).join("\n"):"(no errors stored)"}
+function updErr(){$("errc").textContent="Errors stored: "+getErrs().length}
+async function copyText(t){
+ try{await navigator.clipboard.writeText(t);msg("Copied");return}catch(e){}
+ const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0;top:0;left:0";document.body.appendChild(ta);ta.select();
+ let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();msg(ok?"Copied":"Copy failed. Use Share instead.")}
+let lastReport="",running=false;
+async function runTests(){
+ if(running)return;running=true;
+ const btn=$("runt"),R=[],t0=Date.now(),app=isApp();let info=null,testImg=null,testCanvas=null;
+ btn.disabled=true;$("rep").hidden=false;$("repb").hidden=true;
+ const skip=d=>({s:"SKIP",d:d});
+ async function t(n,fn){
+  $("rep").textContent="Running: "+n+" ...";btn.textContent="Running tests ("+(R.length+1)+")";
+  try{const r=await fn();R.push({s:(r&&r.s)||"PASS",n:n,d:(r&&r.d)||""})}
+  catch(e){R.push({s:"FAIL",n:n,d:eMsg(e)});logErr("test: "+n,eMsg(e))}
+ }
+ const zt=async target=>{
+  if(!useNative)return skip("native camera not running");
+  if(target<zmin-0.01||target>zmax+0.01)return skip(target+"x is outside this camera's range ("+zmin.toFixed(1)+"x to "+zmax.toFixed(1)+"x)");
+  const s0=await tmo(NC.status(),4000,"status");await tmo(NC.setZoom({ratio:target}),4000,"setZoom");await sleepMs(700);
+  const s1=await tmo(NC.status(),4000,"status");await NC.setZoom({ratio:s0.zoom||1}).catch(()=>{});
+  return Math.abs((s1.zoom||0)-target)<=Math.max(.15,target*.08)?{d:"set "+target+"x, camera reports "+(s1.zoom||0).toFixed(2)+"x"}:{s:"FAIL",d:"requested "+target+"x but the camera reports "+(s1.zoom||0).toFixed(2)+"x"}};
+ await t("Android bridge and app info",async()=>{
+  if(!app||!Gal)return skip("not running inside the Android app");
+  info=await tmo(Gal.info(),6000,"Gallery.info");if(info.error)throw new Error(info.error);
+  return{d:"version "+info.versionName+" (code "+info.versionCode+"), "+info.manufacturer+" "+info.model+", Android "+info.android+" (API "+info.sdk+")"}});
+ await t("Camera permission",async()=>{if(!info)return skip("no app info");return info.cameraPermission?{d:"granted"}:{s:"FAIL",d:"not granted. Allow Camera in Android Settings > Apps > GeoCam > Permissions"}});
+ await t("Location permission",async()=>{if(!info)return skip("no app info");if(info.finePermission)return{d:"precise location granted"};if(info.coarsePermission)return{s:"WARN",d:"only approximate location granted. Choose Precise in Android Settings"};return{s:"FAIL",d:"not granted"}});
+ await t("Phone Location switch",async()=>{if(!info)return skip("no app info");return info.gpsEnabled?{d:"Location is ON (GPS provider enabled, network provider "+(info.networkEnabled?"enabled":"disabled")+")"}:{s:"FAIL",d:"Location is OFF in the phone settings"}});
+ await t("Camera hardware found",async()=>{
+  if(!info)return skip("no app info");const c=info.cameras||[];if(!c.length)return{s:"FAIL",d:info.cameraError||"no cameras reported"};
+  return{d:c.map(x=>x.facing+" (id "+x.id+"): "+(x.zoomMax?("zoom "+x.zoomMin.toFixed(1)+"x to "+x.zoomMax.toFixed(1)+"x, "):"")+x.physicalLenses+" physical lens(es)"+(x.flash?", flash":"")+(x.aeMax!=null?", exposure "+x.aeMin+" to "+x.aeMax+" step "+(x.aeStep||0).toFixed(3):"")).join(" | ")}});
+ await t("Native camera running",async()=>{
+  if(!app)return skip("not running inside the Android app");
+  if(!useNative)return{s:"FAIL",d:"native camera not running"+(ncErr?": "+ncErr:" (the basic web camera is in use)")};
+  const s=await tmo(NC.status(),4000,"NativeCam.status");if(!s.started)throw new Error("camera is not bound");
+  return{d:s.facing+" camera, zoom "+(s.zoom||0).toFixed(1)+"x (range "+(s.zoomMin||0).toFixed(1)+"x to "+(s.zoomMax||0).toFixed(1)+"x), preview attached: "+s.preview}});
+ await t("Zoom control (2x)",()=>zt(2));
+ await t("Wide lens (0.5x)",()=>zt(0.5));
+ await t("Telephoto (5x)",()=>zt(5));
+ await t("Flash modes",async()=>{
+  if(!useNative)return skip("native camera not running");const s=await tmo(NC.status(),4000,"status");
+  if(!s.hasFlash)return skip("this camera has no flash (front camera?)");
+  for(const m of["auto","on"])await tmo(NC.setFlash({mode:m}),4000,"setFlash "+m);
+  await NC.setFlash({mode:"off"}).catch(()=>{});return{d:"auto and on accepted"}});
+ await t("Torch",async()=>{
+  if(!useNative)return skip("native camera not running");let s=await tmo(NC.status(),4000,"status");
+  if(!s.hasFlash)return skip("this camera has no flash");
+  await tmo(NC.setFlash({mode:"torch"}),4000,"torch on");await sleepMs(600);s=await NC.status();const on=s.torch;
+  await NC.setFlash({mode:"off"}).catch(()=>{});await sleepMs(400);s=await NC.status();
+  return on&&!s.torch?{d:"torch turned on and off"}:{s:"FAIL",d:"torch state after ON: "+on+", after OFF: "+s.torch}});
+ await t("Exposure control",async()=>{
+  if(!useNative)return skip("native camera not running");
+  if(!(expMax>expMin))return skip("this camera does not support exposure compensation");
+  const target=Math.min(expMax,2);await tmo(NC.setExposure({index:target}),4000,"setExposure");await sleepMs(800);
+  const s=await NC.status();await NC.setExposure({index:0}).catch(()=>{});
+  return s.expIndex===target?{d:"requested "+target+", camera reports "+s.expIndex+" (range "+expMin+" to "+expMax+", step "+expStep.toFixed(3)+")"}:{s:"FAIL",d:"requested "+target+" but the camera reports "+s.expIndex+". The slider will not change brightness on this phone"}});
+ await t("Tap to focus",async()=>{
+  if(!useNative)return skip("native camera not running");
+  const b=document.querySelector(".cam").getBoundingClientRect(),d=window.devicePixelRatio||1;
+  await tmo(NC.focus({x:b.width*d/2,y:b.height*d/2}),4000,"focus");
+  return{d:"focus and metering request accepted (sharpness cannot be confirmed automatically)"}});
+ await t("Front/back camera switch",async()=>{
+  if(!useNative)return skip("native camera not running");const orig=facing;let ok="";
+  try{facing="user";await tmo(nativeStart(),8000,"switch to front");const s=await NC.status();if(s.facing!=="front")throw new Error("front camera not active after the switch");ok="front OK"}
+  finally{facing=orig;try{await tmo(nativeStart(),8000,"switch back")}catch(e){throw new Error("could not return to the original camera: "+eMsg(e))}}
+  return{d:ok+", back to "+(orig==="user"?"front":"back")+" OK"}});
+ await t("Take test photo",async()=>{
+  if(!useNative)return skip("native camera not running");
+  const r=await tmo(NC.capture({rotation:0}),12000,"capture");
+  testImg=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error("captured file could not be read"));im.src=Capacitor.convertFileSrc("file://"+r.path)});
+  return{d:testImg.naturalWidth+" x "+testImg.naturalHeight+" pixels"}});
+ await t("Photo stamp rendering",async()=>{
+  const c=document.createElement("canvas");
+  if(testImg){const k=Math.min(1,1600/Math.max(testImg.naturalWidth,testImg.naturalHeight));c.width=Math.round(testImg.naturalWidth*k);c.height=Math.round(testImg.naturalHeight*k);c.getContext("2d").drawImage(testImg,0,0,c.width,c.height)}
+  else{c.width=1200;c.height=1600;const x=c.getContext("2d");x.fillStyle="#456";x.fillRect(0,0,1200,1600)}
+  stamp(c,pos||{lat:31.5204,lon:74.3587,acc:10},new Date());
+  const u=c.toDataURL("image/jpeg",.8);if(u.length<1000)throw new Error("stamped image is empty");testCanvas=c;
+  return{d:"stamp drawn on a "+c.width+"x"+c.height+" image ("+Math.round(u.length*.75/1024)+" KB JPEG)"+(testImg?"":", blank test image because no camera photo was available")}});
+ await t("Save to Gallery",async()=>{
+  if(!app||!Gal)return skip("not running inside the Android app");if(!testCanvas)return skip("no stamped test image");
+  const s=document.createElement("canvas"),k=480/Math.max(testCanvas.width,testCanvas.height);s.width=Math.round(testCanvas.width*k);s.height=Math.round(testCanvas.height*k);s.getContext("2d").drawImage(testCanvas,0,0,s.width,s.height);
+  const r=await tmo(Gal.save({data:s.toDataURL("image/jpeg",.8),name:"GeoCam_TEST_"+Date.now()+".jpg"}),10000,"Gallery.save");let del="";
+  try{const d=await Gal.delete({uri:r.uri});del=d.deleted>0?" (test image removed again)":" (test image could not be removed)"}catch(e){del=" (test image not removed: "+eMsg(e)+")"}
+  return{d:"saved to "+(r.folder||"Pictures/GeoCam")+del}});
+ await t("Location fix",async()=>{
+  if(!pos)return{s:"FAIL",d:"no location yet. Go outside or near a window and wait"};const a=Math.round(pos.acc);
+  return{s:a<=25?"PASS":"WARN",d:(lastSrc==="gps"?"satellite fix":"mobile network fix")+", accuracy +/-"+a+" m, "+pos.lat.toFixed(6)+", "+pos.lon.toFixed(6)}});
+ await t("Satellite data",async()=>{
+  if(!app||!GN)return skip("not running inside the Android app");let s=null;try{s=await tmo(GN.status(),4000,"Gnss.status")}catch(e){}
+  if(!gnss)return{s:"WARN",d:"no satellite status received yet"+(s?" (GNSS running: "+s.running+", GPS provider: "+s.hasGpsProvider+")":"")};
+  const parts=Object.keys(gnss.c||{}).map(k=>k+" "+gnss.c[k].used+"/"+gnss.c[k].vis).join(", ");
+  return{s:gnss.visible>0?"PASS":"WARN",d:gnss.used+" used of "+gnss.visible+" visible; "+(parts||"no systems")+"; "+(gnss.dual?"dual-frequency (L5) active":"single frequency")+"; signal "+Math.round(gnss.cn0)+" dB-Hz"}});
+ await t("Address lookup (OpenStreetMap)",async()=>{
+  const p=pos||{lat:31.5204,lon:74.3587};
+  const r=await tmo(fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&accept-language=en&lat="+p.lat+"&lon="+p.lon),9000,"address request");
+  const j=await r.json();if(!j.display_name)throw new Error("no address returned");return{d:j.display_name.slice(0,90)+(pos?"":" (sample location, no GPS fix yet)")}});
+ await t("Map tile (OpenStreetMap)",async()=>{
+  await tmo(new Promise((res,rej)=>{const im=new Image();im.crossOrigin="anonymous";im.onload=res;im.onerror=()=>rej(new Error("tile failed to load (check the internet connection)"));im.src="https://tile.openstreetmap.org/17/92000/52000.png"}),9000,"map tile");
+  return{d:"tile downloaded"}});
+ await t("Google Maps key",async()=>{
+  const K=$("key").value.trim();if(!K)return skip("no key entered (optional)");const p=pos||{lat:31.5204,lon:74.3587};
+  const r=await tmo(fetch("https://maps.googleapis.com/maps/api/geocode/json?latlng="+p.lat+","+p.lon+"&key="+encodeURIComponent(K)),9000,"Google request");
+  const j=await r.json();if(j.status!=="OK")throw new Error(j.status+(j.error_message?": "+j.error_message:""));
+  return{d:"Geocoding API OK (Static Maps is used when a photo is taken)"}});
+ await t("Phone rotation sensor",async()=>{
+  const got=await new Promise(res=>{let ok=false;const h=e=>{const a=e.accelerationIncludingGravity;if(a&&a.x!=null)ok=true};window.addEventListener("devicemotion",h);setTimeout(()=>{window.removeEventListener("devicemotion",h);res(ok)},1500)});
+  return got?{d:"motion data received, icon rotation now "+curRot()+" degrees"}:{s:"WARN",d:"no motion data received (icon rotation and landscape photos may not work)"}});
+ await t("Settings storage",async()=>{
+  localStorage.setItem("geocam_t","1");if(localStorage.getItem("geocam_t")!=="1")throw new Error("could not read back");localStorage.removeItem("geocam_t");
+  return{d:"read and write OK; "+items.length+" photo(s) in the gallery list"}});
+ await t("Screen size and controls",async()=>{
+  const vw=innerWidth,vh=innerHeight,issues=[],sel=[["#gps","GPS chip"],["#cfg","Settings button"],["#fl","Flash button"],["#exb","Exposure button"],["#snap","Shutter"],["#galb","Gallery button"],["#flip","Flip button"]];
+  for(const [q,n] of sel){const e=document.querySelector(q);if(!e||e.hidden)continue;const b=e.getBoundingClientRect();if(b.width===0)continue;
+   if(b.left<-1||b.top<-1||b.right>vw+1||b.bottom>vh+1)issues.push(n+" is partly off-screen");else if(Math.min(b.width,b.height)<36)issues.push(n+" is small ("+Math.round(Math.min(b.width,b.height))+" px)")}
+  document.querySelectorAll(".zm button").forEach((e,i)=>{const b=e.getBoundingClientRect();if(b.right>vw+1||b.left<-1)issues.push("zoom button "+(i+1)+" is off-screen")});
+  const d="screen "+vw+" x "+vh+" css px, density "+(devicePixelRatio||1).toFixed(2)+", UI scale "+getComputedStyle(document.documentElement).getPropertyValue("--s").trim()+(document.body.classList.contains("compact")?", compact mode":"")+(document.body.classList.contains("wide")?", wide mode":"");
+  return issues.length?{s:"WARN",d:d+". "+issues.join("; ")}:{d:d+". All controls visible and tappable"}});
+ await t("Error log",async()=>{const n=getErrs().length;return n?{s:"WARN",d:n+" error(s) stored, listed at the end of this report"}:{d:"no errors stored"}});
+ const cnt={PASS:0,FAIL:0,WARN:0,SKIP:0};R.forEach(r=>cnt[r.s]=(cnt[r.s]||0)+1);
+ const head=["GEOCAM TEST REPORT","Generated: "+new Date().toString(),"App: "+(info?info.versionName+" (code "+info.versionCode+")":"unknown (not running in the Android app)"),
+  "Device: "+(info?info.manufacturer+" "+info.model+", Android "+info.android+" (API "+info.sdk+")":navigator.userAgent),
+  "WebView: "+((navigator.userAgent.match(/Chrome\/([\d.]+)/)||[])[1]||"?"),"Camera mode: "+(useNative?"native (CameraX)":"basic web camera"),
+  "Run time: "+((Date.now()-t0)/1000).toFixed(1)+" s","","SUMMARY: "+cnt.PASS+" passed, "+cnt.FAIL+" failed, "+cnt.WARN+" warnings, "+cnt.SKIP+" skipped",""];
+ const manual=["","CHECK MANUALLY (these open Android screens or need your eyes):","- Share button in the photo viewer","- Map button in the photo viewer","- Press Home, wait, then reopen the app (camera and GPS should restart)","- Brightness really changes when you move the exposure slider","- Stamp is easy to read on a real photo"];
+ lastReport=head.concat(R.map(r=>"["+r.s+"] "+r.n+(r.d?" - "+r.d:"")),manual,["","ERROR LOG (last 40):",errText(40)]).join("\n");
+ $("rep").textContent=lastReport;$("repb").hidden=false;btn.disabled=false;btn.textContent="Run all tests again";running=false;
+}
+$("runt").onclick=runTests;
+$("errcp").onclick=()=>copyText("GeoCam error log\n"+errText());
+$("errcl").onclick=()=>{try{localStorage.removeItem("geocam_err")}catch(e){}updErr();msg("Error log cleared")};
+$("repcp").onclick=()=>copyText(lastReport);
+$("repsv").onclick=async()=>{
+ const d=new Date(),p=n=>String(n).padStart(2,"0"),nm="GeoCam_report_"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"_"+p(d.getHours())+p(d.getMinutes())+".txt";
+ try{if(isApp()&&Gal){const r=await Gal.saveText({name:nm,text:lastReport});msg("Saved to "+r.folder+"/"+nm,7000)}
+  else{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lastReport],{type:"text/plain"}));a.download=nm;a.click()}}
+ catch(e){msg("Save failed: "+eMsg(e),8000)}};
+$("repsh").onclick=async()=>{
+ try{if(isApp()&&Gal)await Gal.shareText({text:lastReport,subject:"GeoCam test report",uri:""});
+  else if(navigator.share)await navigator.share({title:"GeoCam test report",text:lastReport});else copyText(lastReport)}
+ catch(e){msg("Share failed: "+eMsg(e),8000)}};
+
 function frame(){const v=$("v"),W=v.videoWidth,H=v.videoHeight,ea=v.clientWidth/v.clientHeight,va=W/H;let sw=W,sh=H,sx=0,sy=0;if(va>ea){sw=H*ea;sx=(W-sw)/2}else{sh=W/ea;sy=(H-sh)/2}
  if(dz>1){const nw=sw/dz,nh=sh/dz;sx+=(sw-nw)/2;sy+=(sh-nh)/2;sw=nw;sh=nh}
  const c=document.createElement("canvas");c.width=sw;c.height=sh;c.getContext("2d").drawImage(v,sx,sy,sw,sh,0,0,sw,sh);return c}
@@ -417,6 +610,6 @@ $("gps").onclick=()=>{renderGnss();sheet("gnp",true)};$("gnr").onclick=()=>start
 function sheet(id,on){$(id).classList.toggle("on",on);$("scrim").hidden=!document.querySelector(".sheet.on")}
 function closeSheets(){document.querySelectorAll(".sheet.on").forEach(e=>e.classList.remove("on"));$("scrim").hidden=true}
 $("scrim").onclick=closeSheets;
-$("cfg").onclick=()=>{diag();sheet("cfgp",true)};$("cfgx").onclick=()=>sheet("cfgp",false);
+$("cfg").onclick=()=>{diag();updErr();sheet("cfgp",true)};$("cfgx").onclick=()=>sheet("cfgp",false);
 $("galb").onclick=()=>sheet("galp",true);$("galx").onclick=()=>sheet("galp",false);
 </script></body></html>

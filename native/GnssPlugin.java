@@ -155,6 +155,22 @@ public class GnssPlugin extends Plugin {
         netListener = null;
     }
 
+    @SuppressLint("MissingPermission")
+    @PluginMethod
+    public void status(final PluginCall call) {
+        JSObject o = new JSObject();
+        try {
+            LocationManager m = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+            o.put("running", statusCb != null);
+            o.put("gpsEnabled", m != null && m.isProviderEnabled(LocationManager.GPS_PROVIDER));
+            o.put("networkEnabled", m != null && m.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+            o.put("hasGpsProvider", m != null && m.getAllProviders().contains(LocationManager.GPS_PROVIDER));
+        } catch (Throwable e) {
+            o.put("error", String.valueOf(e));
+        }
+        call.resolve(o);
+    }
+
     @PluginMethod
     public void stop(final PluginCall call) {
         getActivity().runOnUiThread(() -> {
