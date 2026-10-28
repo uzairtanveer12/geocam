@@ -1,0 +1,47 @@
+GEOCAM TEST REPORT
+Generated (UTC): 2026-10-28T06:57:25.657Z
+App: GeoCam_v1.0.21 (code 1793164051)
+Device: TECNO TECNO KM5, Android 15 (API 35)
+WebView: 155.<num>.43
+Camera mode: native (CameraX)
+Run time: 10.3 s
+Privacy: anonymous report. No location, address, name, photos or API keys are included.
+
+SUMMARY: 23 passed, 0 failed, 1 warnings, 2 skipped
+
+[PASS] Android bridge and app info - version GeoCam_v1.0.21 (code 1793164051), TECNO TECNO KM5, Android 15 (API 35)
+[PASS] Camera permission - granted
+[PASS] Location permission - precise location granted
+[PASS] Phone Location switch - Location is ON (GPS provider enabled, network provider enabled)
+[PASS] Camera hardware found - back (id 0): zoom 1.0x to 15.0x, 0 physical lens(es), flash, exposure -20 to 20 step 0.100 | front (id 1): zoom 1.0x to 4.0x, 0 physical lens(es), flash, exposure -20 to 20 step 0.100
+[PASS] Native camera running - back camera, zoom 1.0x (range 1.0x to 15.0x), preview attached: true
+[PASS] Zoom control (2x) - set 2x, camera reports 2.00x
+[SKIP] Wide lens (0.5x) - 0.5x is outside this camera's range (1.0x to 15.0x)
+[PASS] Telephoto (5x) - set 5x, camera reports 5.00x
+[PASS] Flash modes - auto and on accepted
+[PASS] Torch - torch turned on and off
+[PASS] Exposure control - requested 2, camera reports 2 (range -20 to 20, step 0.100)
+[PASS] Tap to focus - focus and metering request accepted (sharpness cannot be confirmed automatically)
+[PASS] Front/back camera switch - front OK, back to back OK
+[PASS] Take test photo - 2976 x 3968 pixels
+[PASS] Photo stamp rendering - stamp drawn on a 1200x1600 image (204 KB JPEG)
+[PASS] Save to Gallery - saved to Pictures/GeoCam (test image removed again)
+[WARN] Location fix - mobile network fix, accuracy +/-100 m
+[PASS] Satellite data - 0 used of 34 visible; GPS 0/10, GLONASS 0/6, BEIDOU 0/18; single frequency; signal 0 dB-Hz
+[PASS] Address lookup (OpenStreetMap) - address service answered correctly (address text is not included in the report)
+[PASS] Map tile (OpenStreetMap) - tile downloaded
+[SKIP] Google Maps key - no key entered (optional)
+[PASS] Phone rotation sensor - motion data received, icon rotation now 0 degrees
+[PASS] Settings storage - read and write OK; 3 photo(s) in the gallery list
+[PASS] Screen size and controls - screen 360 x 744 css px, density 2.00, UI scale 0.907. All controls visible and tappable
+[PASS] Error log - no errors stored
+
+CHECK MANUALLY (these open Android screens or need your eyes):
+- Share button in the photo viewer
+- Map button in the photo viewer
+- Press Home, wait, then reopen the app (camera and GPS should restart)
+- Brightness really changes when you move the exposure slider
+- Stamp is easy to read on a real photo
+
+ERROR LOG (last 40):
+(no errors stored)
