@@ -1,0 +1,51 @@
+GEOCAM TEST REPORT
+Generated (UTC): 2026-10-28T12:21:51.829Z
+App: unknown (not running in the Android app)
+Device: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0
+WebView: 156.0.0.0
+Camera mode: basic web camera
+Run time: 3.5 s
+Privacy: anonymous report. No location, address, name, photos or API keys are included.
+
+SUMMARY: 4 passed, 1 failed, 3 warnings, 18 skipped
+
+[SKIP] Android bridge and app info - not running inside the Android app
+[SKIP] Camera permission - no app info
+[SKIP] Location permission - no app info
+[SKIP] Phone Location switch - no app info
+[SKIP] Camera hardware found - no app info
+[SKIP] Native camera running - not running inside the Android app
+[SKIP] Zoom control (2x) - native camera not running
+[SKIP] Wide lens (0.5x) - native camera not running
+[SKIP] Telephoto (5x) - native camera not running
+[SKIP] Flash modes - native camera not running
+[SKIP] Torch - native camera not running
+[SKIP] Exposure control - native camera not running
+[SKIP] Tap to focus - native camera not running
+[SKIP] Front/back camera switch - native camera not running
+[SKIP] Take test photo - native camera not running
+[PASS] Photo stamp rendering - stamp drawn on a 1200x1600 image (35 KB JPEG), blank test image because no camera photo was available
+[SKIP] Save to Gallery - not running inside the Android app
+[FAIL] Location fix - no location yet. Go outside or near a window and wait
+[SKIP] Satellite data - not running inside the Android app
+[PASS] Address lookup (OpenStreetMap) - address service answered correctly (address text is not included in the report) (sample location used, no GPS fix yet)
+[PASS] Map tile (OpenStreetMap) - tile downloaded
+[SKIP] Google Maps key - no key entered (optional)
+[WARN] Phone rotation sensor - no motion data received (icon rotation and landscape photos may not work)
+[PASS] Settings storage - read and write OK; 0 photo(s) in the gallery list
+[WARN] Screen size and controls - screen 1920 x 951 css px, density 1.00, UI scale 1.000, wide mode. GPS chip is small (33 px)
+[WARN] Error log - 5 error(s) stored, listed at the end of this report
+
+CHECK MANUALLY (these open Android screens or need your eyes):
+- Share button in the photo viewer
+- Map button in the photo viewer
+- Press Home, wait, then reopen the app (camera and GPS should restart)
+- Brightness really changes when you move the exposure slider
+- Stamp is easy to read on a real photo
+
+ERROR LOG (last 40):
+[2026-10-27 06:46:53Z] app: Camera not available. Allow camera permission, then tap Start camera.
+[2026-10-27 06:46:54Z] app: Location permission denied. Tap the lock icon in the address bar, allow Location, then tap the GPS chip.
+[2026-10-28 12:21:32Z] app: Camera not available. Allow camera permission, then tap Start camera.
+[2026-10-28 12:21:34Z] app: Location permission denied. Tap the lock icon in the address bar, allow Location, then tap the GPS chip.
+[2026-10-28 12:21:41Z] app: GPS not available yet, using mobile location. It switches to GPS as soon as GPS is found.
