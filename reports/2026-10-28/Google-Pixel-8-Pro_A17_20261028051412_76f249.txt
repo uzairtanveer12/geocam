@@ -1,0 +1,50 @@
+GEOCAM TEST REPORT
+Generated (UTC): 2026-10-28T05:14:10.904Z
+App: GeoCam_v1.0.21 (code 1793164051)
+Device: Google Pixel 8 Pro, Android 17 (API 37)
+WebView: 155.<num>.46
+Camera mode: native (CameraX)
+Run time: 8.2 s
+Privacy: anonymous report. No location, address, name, photos or API keys are included.
+
+SUMMARY: 23 passed, 0 failed, 2 warnings, 1 skipped
+
+[PASS] Android bridge and app info - version GeoCam_v1.0.21 (code 1793164051), Google Pixel 8 Pro, Android 17 (API 37)
+[PASS] Camera permission - granted
+[PASS] Location permission - precise location granted
+[PASS] Phone Location switch - Location is ON (GPS provider enabled, network provider enabled)
+[PASS] Camera hardware found - back (id 0): zoom 0.5x to 30.0x, 5 physical lens(es), flash, exposure -24 to 24 step 0.167 | front (id 1): zoom 0.9x to 10.0x, 2 physical lens(es), exposure -24 to 24 step 0.167
+[PASS] Native camera running - back camera, zoom 1.0x (range 0.5x to 30.0x), preview attached: true
+[PASS] Zoom control (2x) - set 2x, camera reports 2.00x
+[PASS] Wide lens (0.5x) - set 0.5x, camera reports 0.50x
+[PASS] Telephoto (5x) - set 5x, camera reports 5.00x
+[PASS] Flash modes - auto and on accepted
+[PASS] Torch - torch turned on and off
+[PASS] Exposure control - requested 2, camera reports 2 (range -24 to 24, step 0.167)
+[PASS] Tap to focus - focus and metering request accepted (sharpness cannot be confirmed automatically)
+[PASS] Front/back camera switch - front OK, back to back OK
+[PASS] Take test photo - 3000 x 4000 pixels
+[PASS] Photo stamp rendering - stamp drawn on a 1200x1600 image (232 KB JPEG)
+[PASS] Save to Gallery - saved to Pictures/GeoCam (test image removed again)
+[WARN] Location fix - satellite fix, accuracy +/-171 m
+[PASS] Satellite data - 6 used of 11 visible; GPS 2/3, GLONASS 1/2, QZSS 1/2, BEIDOU 2/4; dual-frequency (L5) active; signal 25 dB-Hz
+[PASS] Address lookup (OpenStreetMap) - address service answered correctly (address text is not included in the report)
+[PASS] Map tile (OpenStreetMap) - tile downloaded
+[SKIP] Google Maps key - no key entered (optional)
+[PASS] Phone rotation sensor - motion data received, icon rotation now 0 degrees
+[PASS] Settings storage - read and write OK; 1 photo(s) in the gallery list
+[PASS] Screen size and controls - screen 448 x 923 css px, density 2.25, UI scale 1.126. All controls visible and tappable
+[WARN] Error log - 4 error(s) stored, listed at the end of this report
+
+CHECK MANUALLY (these open Android screens or need your eyes):
+- Share button in the photo viewer
+- Map button in the photo viewer
+- Press Home, wait, then reopen the app (camera and GPS should restart)
+- Brightness really changes when you move the exposure slider
+- Stamp is easy to read on a real photo
+
+ERROR LOG (last 40):
+[2026-10-27 16:10:53Z] app: Upload failed: not found
+[2026-10-27 16:11:11Z] app: Upload failed: not found
+[2026-10-28 05:13:47Z] app: Native camera failed: Camera permission denied. Using basic camera.
+[2026-10-28 05:13:47Z] app: Camera not available. Allow camera permission, then tap Start camera.
